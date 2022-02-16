@@ -1,0 +1,4 @@
+2022-02-16 13:20:18,434 - uvicorn.error - WARNING - The --reload flag should not be used in production on Windows.
+2022-02-16 13:20:18,459 - uvicorn.error - INFO - Started server process [5192]
+2022-02-16 13:20:18,460 - uvicorn.error - INFO - Waiting for application startup.
+2022-02-16 13:20:18,462 - uvicorn.error - INFO - Application startup complete.

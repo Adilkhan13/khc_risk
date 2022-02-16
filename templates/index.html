@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -52,8 +52,8 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div class="jumbotron">
       <div class="container">
-        <h1>Hello, {{ username }}</h1>
-        <p>This is a template for a simple marketing or informational website. It includes a large callout called a jumbotron and three supporting pieces of content. Use it as a starting point to create something more unique.</p>
+        <h3>microservice_v1, последняя отчетная дата: {{last_report_date}}</h3>
+        <p>Загрузите матрицу СП на последнюю отчетную дату</p>
         <p>
           <!--<a class="btn btn-primary btn-lg" href="#" role="button">Learn more &raquo;</a>-->
           <form action="/file/" enctype="multipart/form-data" method="post">
@@ -61,8 +61,17 @@
         <input type="submit" value="upload" class="btn btn-primary btn-lg">
         </form>
         </p>
-      </div>
+	<br>
+	<p>Скачать винтаж на последнюю отчетную дату</p>
+	<form action="/download/" method="post">
+	<input type="submit" name="action" value="download" class="btn btn-primary btn-lg">
+        </form>
+</div>
     </div>
+<div class="container">
+<p><h2>Шаблон</h2></p>
+<img src = http://192.168.5.68:8000/static/imgs\example_template.JPG alt="example">
+</div>
 <!--
     <div class="container">
       <!- - Example row of columns - ->
