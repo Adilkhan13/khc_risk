@@ -1,1 +1,5 @@
 ﻿uploads/
+__pycache__/
+drafts/
+*.idea
+*.ipynb_checkpoints

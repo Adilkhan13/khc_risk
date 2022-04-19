@@ -1,4 +1,8 @@
-2022-02-16 13:20:18,434 - uvicorn.error - WARNING - The --reload flag should not be used in production on Windows.
-2022-02-16 13:20:18,459 - uvicorn.error - INFO - Started server process [5192]
-2022-02-16 13:20:18,460 - uvicorn.error - INFO - Waiting for application startup.
-2022-02-16 13:20:18,462 - uvicorn.error - INFO - Application startup complete.
+2022-04-19 14:38:51,616 - uvicorn.error - WARNING - The --reload flag should not be used in production on Windows.
+2022-04-19 14:38:52,118 - uvicorn.error - INFO - Started server process [5932]
+2022-04-19 14:38:52,119 - uvicorn.error - INFO - Waiting for application startup.
+2022-04-19 14:38:52,128 - uvicorn.error - INFO - Application startup complete.
+2022-04-19 14:39:05,510 - root - INFO - username admin, pass admin
+2022-04-19 14:39:05,734 - root - INFO - last_report_date 2021-11-01
+2022-04-19 14:39:08,277 - root - INFO - Скачивание винтажа
+2022-04-19 14:54:46,743 - root - INFO - Скачивание винтажа
