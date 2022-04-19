@@ -1,7 +1,7 @@
 ﻿# -*- coding: UTF-8 -*-
 from datetime import date
 import functions
-from fastapi import FastAPI, Form
+
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
@@ -19,13 +19,15 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
+LOGIN_PASS = "admin"
+LOGIN_USERNAME = "admin"
 
 # mypackage
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-
+# authorization
 @app.post("/user/")
 async def files(
     request: Request, username: str = Form(...), password: str = Form(...),
@@ -33,14 +35,15 @@ async def files(
     logging.info(f"username {str(username)}, pass {str(password)}")
 
     # pass
-    if username == "admin" and password == "admin":
+    if username == LOGIN_USERNAME and password == LOGIN_PASS:
+        ## Читает логи, и достает от туда последнюю отчетную дату для отправки на фронтенд
         df = pd.read_csv("./datasets/loggs_k.csv")
         df["отчетная дата"] = pd.to_datetime(df["отчетная дата"], format="%d.%m.%y")
         last_report_date = df["отчетная дата"].max()
         logging.info(f"last_report_date {str(last_report_date)[:10]}")
         return templates.TemplateResponse(
             "index.html",
-            {"request": request, "last_report_date": str(last_report_date)[:10],},
+            {"request": request, "last_report_date": str(last_report_date)[:10]},
         )
     else:
         logging.info(f"Wrong pass username {username}, pass {password}")
@@ -65,15 +68,15 @@ async def upload_file(
             functions.add_merge(file_location)
         except Exception as e:
             logging.exception("Exception occurred")
-            logging.error(f"file '{excel_file.filename}' not supported")
+            logging.error(f"file '{excel_file.filename}' not supported,\n{e}")
             return {"info": f"file '{excel_file.filename}' not supported"}
         df = functions.load_data()
         ids = functions.ids(df)
         functions.vintage(df, ids).to_excel(
             "./datasets/vintage/vintage_кик_" + str(date.today()) + ".xlsx"
         )
-        logging.info(f"Обновление прошло успешно")
-        return {"info": f"Обновление прошло успешно"}
+        logging.info("Обновление прошло успешно")
+        return {"info": "Обновление прошло успешно"}
 
 
 @app.post("/download/")

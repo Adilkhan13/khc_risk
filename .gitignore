@@ -3,3 +3,5 @@ __pycache__/
 drafts/
 *.idea
 *.ipynb_checkpoints
+*.vscode
+app.log

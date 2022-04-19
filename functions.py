@@ -31,7 +31,8 @@ def load_data() -> pd.DataFrame:
     last_updated_file_path = newest(path="./datasets/main_data")
     df = pd.read_csv(last_updated_file_path, dtype=str)
 
-    # явная присвоение типов данных
+    # явное присвоение типов данных
+    df["ID"] = df["ID"].astype(str)
     df["Oтчетная дата"] = pd.to_datetime(df["Oтчетная дата"])
     df["Дата начала"] = pd.to_datetime(df["Дата начала"])
     df["Дефолт"] = df["Дефолт"].astype(int)
@@ -41,20 +42,28 @@ def load_data() -> pd.DataFrame:
 def ids(df: pd.DataFrame) -> pd.DataFrame:
     """
     Достаем ID клиентов, поскольку id есть не во всех ячейках был построен костыль
+    возвращает два столбца: 
+        date - Отчетные даты 
+    	id - каждый уникальный клиент с привязкой на отчетную дату (object)
     """
+    # все дни приравниваем к первому дню соответствующего месяца
     df["Дата начала"] = (
         df["Дата начала"]
         + pd.offsets.MonthEnd(0)
         - pd.offsets.MonthBegin(normalize=True)
     )
-    df = df.melt(id_vars="Дата начала", value_vars="ID")
-    df = df.rename(columns={"Дата начала": "date", "value": "id"})[["date", "id"]]
+    df = df.rename(columns={"Дата начала": "date", "ID": "id"})[["date", "id"]]
     df = df.sort_values("date").drop_duplicates("id", keep="first")
+    # сдвиг на месяц вперед
     df.date = df.date + pd.DateOffset(months=1)
+    # Объединение нового отчета со старым
     df = ids_kik(df)
     return df
 
 
+# Вызывается внутри ids
+# не во всех СП есть ID клиентов и до данной даты, расчет производился по другой формуле,
+# для того чтобы не ломать логику было решено пересчитывать пользователей с 2021-05-01 числа
 def ids_kik(df: pd.DataFrame, data_of_start: str = "2021-05-01") -> pd.DataFrame:
     """
     костыль так как до определенной даты ID не указывался
@@ -62,6 +71,7 @@ def ids_kik(df: pd.DataFrame, data_of_start: str = "2021-05-01") -> pd.DataFrame
     df = df[df.date >= data_of_start]
     df_s = pd.read_csv("./datasets/ID_old.csv", dtype=str)
     df_s["date"] = pd.to_datetime(df_s["date"])
+    df_s["id"] = df_s["id"].astype(str)
     df_s = df_s[df_s["date"] < data_of_start]
     df_s = df_s.sort_values("date").drop_duplicates("id", keep="first")
     df = pd.concat([df_s, df])
@@ -72,6 +82,7 @@ def vintage(df: pd.DataFrame, ids: pd.DataFrame) -> pd.DataFrame:
     """
     формирование винтажа
     """
+    # Series с месяцами за последние 5 лет (за текущую дату берется дата последнего СП)
     date_range = pd.date_range(
         start=df["Oтчетная дата"].max() - pd.DateOffset(years=5),
         end=df["Oтчетная дата"].max(),
@@ -80,7 +91,10 @@ def vintage(df: pd.DataFrame, ids: pd.DataFrame) -> pd.DataFrame:
 
     vintage = []
     for date in date_range:
+        # Уникальные клиенты впервые появившиеся в отчетную дату
         id_list = ids[ids["date"] == date]["id"].drop_duplicates().values
+        # почаю тех у кого значение дефолта между 90 и 120 в рамках всего периода
+        # один и тот же клиент может быть отмечен несколько раз
         temp = (
             df[(df["ID"].isin(id_list)) & (df["Дефолт"] >= 90) & (df["Дефолт"] <= 120)]
             .groupby("Oтчетная дата")
@@ -88,14 +102,17 @@ def vintage(df: pd.DataFrame, ids: pd.DataFrame) -> pd.DataFrame:
             .reset_index()
         )
         temp.rename(columns={"Дефолт": date.date()}, inplace=True)
-
-        date_range = pd.date_range(start=date, end=df["Oтчетная дата"].max(), freq="MS")
+        # вместо даты будем использовать номер месяца с даты первого появления клиента
+        temp_date_range = pd.date_range(
+            start=date, end=df["Oтчетная дата"].max(), freq="MS"
+        )
         merge_month = pd.DataFrame(
             {
-                "Oтчетная дата": date_range,
-                "months": [i for i in range(1, len(date_range) + 1)],
+                "Oтчетная дата": temp_date_range,
+                "months": [i for i in range(1, len(temp_date_range) + 1)],
             }
         )
+        # заполняем месяца без дефолта значением '-'
         temp = pd.merge(merge_month, temp, on="Oтчетная дата", how="left")
         temp.drop("Oтчетная дата", axis=1, inplace=True)
         temp = temp.fillna("-")
@@ -111,9 +128,9 @@ def vintage(df: pd.DataFrame, ids: pd.DataFrame) -> pd.DataFrame:
 
     df = pd.merge(
         df,
-        ids.date.value_counts().sort_index(),
+        ids["date"].value_counts().sort_index(),
         left_on=df.index,
-        right_on=ids.date.value_counts().sort_index().index,
+        right_on=ids["date"].value_counts().sort_index().index,
     )
     df = df.rename(columns={"key_0": "отчетная дата", "date": "Количество"})
     df = df[["отчетная дата", "Количество"] + [i for i in range(3, 61)]]
@@ -129,7 +146,7 @@ def upload_new_data(new_file_path) -> pd.DataFrame:
     """
     Загрузка и принятие нового отчета
     """
-    data = []
+
     loggs = {
         "коментарии": [],
         "кол-во записей": [],
@@ -138,7 +155,7 @@ def upload_new_data(new_file_path) -> pd.DataFrame:
 
     file = pd.ExcelFile(new_file_path)
     sheets = file.sheet_names
-    sheets
+
     if len(sheets) > 1:
         logging.error("Кол-во страниц превышено")
     elif (len(sheets[0]) != 8) or (sheets[0][:2] != "01"):
